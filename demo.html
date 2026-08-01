@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>T-Pulse — DEMO</title>
+
+    <!-- Telegram SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+    <!-- Изолированные стили DEMO версии -->
+    <link rel="stylesheet" href="demo.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ========================================= -->
+    <!-- Header (Демо режим) -->
+    <!-- ========================================= -->
+
+    <header class="header" id="appHeader">
+        <div class="market-info">
+            <div class="project-name">T-Pulse <span class="badge-demo">DEMO</span></div>
+            <div class="market-name">BTC / USDT</div>
+        </div>
+
+        <div class="balance-box">
+            <div class="balance-label">ДЕМО БАЛАНС</div>
+            <div class="balance-row">
+                <span class="balance-value" id="balance">1000</span>
+                <span class="balance-currency">TNRX</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================= -->
+    <!-- Pages -->
+    <!-- ========================================= -->
+
+    <main class="pages">
+
+        <!-- ================= TRADE PAGE ================= -->
+
+        <section class="page active" id="tradePage">
+
+            <div class="chart-wrapper">
+
+                <div id="tvchart"></div>
+
+                <!-- Эффекты поверх графика -->
+                <div class="chart-overlay" id="chartOverlay">
+                    <div class="round-timer" id="roundTimer" style="display: none;">10</div>
+                    <div class="result-popup" id="resultPopup"></div>
+                </div>
+
+                <!-- Частицы / вспышки -->
+                <div class="fx-layer" id="fxLayer"></div>
+
+            </div>
+
+            <div class="status-panel" id="statusMessage">
+                Демо-график готов. Делай свой прогноз!
+            </div>
+
+            <!-- Панель выбора суммы ставки -->
+            <div class="bet-modal-panel" id="betModalPanel" style="display: none;">
+                <div class="bet-modal-header">
+                    <span>Ставка (Tinerex):</span>
+                    <span class="selected-direction-label" id="selectedDirectionLabel">UP</span>
+                </div>
+                
+                <div class="bet-presets" id="betPresetsContainer"></div>
+
+                <div class="bet-actions">
+                    <button class="btn btn-confirm-bet" id="btnConfirmBet">ПОДТВЕРДИТЬ СДЕЛКУ</button>
+                    <button class="btn btn-cancel-bet" id="btnCancelBet">✕</button>
+                </div>
+            </div>
+
+            <!-- Основные кнопки действий -->
+            <div class="controls" id="tradingControls">
+
+                <button class="btn btn-down" id="btnDown">
+                    <span class="btn-title">PULSE</span>
+                    <span class="btn-direction">DOWN</span>
+                </button>
+
+                <button class="btn btn-up" id="btnUp">
+                    <span class="btn-title">PULSE</span>
+                    <span class="btn-direction">UP</span>
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- ================= BONUS PAGE ================= -->
+
+        <section class="page" id="bonusPage">
+
+            <div class="page-content">
+
+                <h2>Daily Bonus</h2>
+
+                <p>
+                    Заходи каждый день и получай бесплатные виртуальные TNRX.
+                </p>
+
+                <button class="btn btn-bonus" id="claimBonus">
+                    Забрать 500 TNRX
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- ================= LEADERBOARD PAGE ================= -->
+
+        <section class="page" id="leaderboardPage">
+
+            <div class="page-content">
+
+                <h2>TOP Demo Traders</h2>
+
+                <div class="leaderboard-list" id="leaderboardList"></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ========================================= -->
+    <!-- Bottom Navigation -->
+    <!-- ========================================= -->
+
+    <nav class="bottom-nav" id="appNav">
+
+        <!-- Старт (Главная / Welcome) -->
+        <a href="./welcome.html" class="nav-item" data-tab="tab-start">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+            <span class="nav-text">Главная</span>
+        </a>
+
+        <!-- Трейд -->
+        <a href="#" class="nav-item active" data-tab="trade">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.3L22 12V6h-6z"/>
+            </svg>
+            <span class="nav-text">Трейд</span>
+        </a>
+
+        <!-- Бонус -->
+        <a href="#" class="nav-item" data-tab="bonus">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.45 9.95 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+            </svg>
+            <span class="nav-text">Бонус</span>
+        </a>
+
+        <!-- Топ -->
+        <a href="#" class="nav-item" data-tab="leaderboard">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+            <span class="nav-text">Топ</span>
+        </a>
+
+    </nav>
+
+</div>
+
+<!-- Подключаем скрипт демо-версии -->
+<script src="demo.js"></script>
+
+</body>
+</html>

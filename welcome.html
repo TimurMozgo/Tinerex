@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>T-Pulse — Welcome</title>
+
+    <!-- Telegram SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Стили только для этого экрана -->
+    <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+
+<div class="welcome-container">
+    
+    <h1 class="welcome-title">Добро пожаловать в <span class="brand-text">T-Pulse!</span></h1>
+    <p class="welcome-subtitle">Выберите режим, в котором Вы хотите сыграть:</p>
+
+    <div class="mode-cards">
+        <!-- Карточка DEMO -->
+        <a href="demo.html" class="mode-card card-demo" id="btnGoDemo">
+            <div class="card-icon">🎮</div>
+            <div class="card-info">
+                <span class="card-title">DEMO</span>
+                <span class="card-desc">Тренировка на виртуальные Tinerex без риска</span>
+            </div>
+        </a>
+
+        <!-- Карточка REAL -->
+        <a href="real.html" class="mode-card card-real" id="btnGoReal">
+            <div class="card-icon">💎</div>
+            <div class="card-info">
+                <span class="card-title">REAL (TON)</span>
+                <span class="card-desc">Игра на реальный профит в сети TON</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<script src="welcome.js"></script>
+</body>
+</html>

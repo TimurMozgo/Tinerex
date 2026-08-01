@@ -1,0 +1,425 @@
+/* ==========================================================================
+   T-PULSE REAL — TON THEME
+   ========================================================================== */
+
+:root {
+    --bg-main: #06090e;
+    --bg-card: #0d121d;
+    
+    /* Цвета TON / Gram */
+    --ton-blue: #0098ea;
+    --ton-cyan: #00f2fe;
+    --ton-gradient: linear-gradient(135deg, #0098ea 0%, #00f2fe 100%);
+    --ton-glow: rgba(0, 152, 234, 0.3);
+    
+    --color-up: #00e676;
+    --color-down: #ff1744;
+    --text-primary: #ffffff;
+    --text-secondary: #7f8c9d;
+    --border-color: rgba(0, 152, 234, 0.2);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+}
+
+.app {
+    width: 100%;
+    max-width: 480px; /* Фиксация под мобильный формат Telegram Mini App */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: radial-gradient(circle at top, rgba(0, 152, 234, 0.05) 0%, var(--bg-main) 70%);
+}
+
+/* ==========================================================================
+   HEADER (Шапка приложения)
+   ========================================================================== */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(6, 9, 14, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.market-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.project-name {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-demo {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--ton-cyan);
+    background: rgba(0, 152, 234, 0.12);
+    border: 1px solid var(--border-color);
+    padding: 2px 6px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+}
+
+.market-name {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Баланс */
+.balance-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0, 152, 234, 0.05);
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.balance-label {
+    font-size: 9px;
+    color: var(--ton-cyan);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.balance-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.balance-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.balance-currency {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ton-cyan);
+}
+
+/* ==========================================================================
+   PAGES CONTAINER (Страницы)
+   ========================================================================== */
+
+.pages {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    padding: 12px;
+}
+
+.page.active {
+    display: flex;
+}
+
+/* ==========================================================================
+   TRADE PAGE (График и торговля)
+   ========================================================================== */
+
+.chart-wrapper {
+    flex: 1;
+    position: relative;
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    min-height: 250px;
+}
+
+#tvchart {
+    width: 100%;
+    height: 100%;
+}
+
+.chart-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.round-timer {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--ton-cyan);
+    text-shadow: 0 0 20px var(--ton-glow);
+    background: rgba(6, 9, 14, 0.75);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--ton-cyan);
+}
+
+.status-panel {
+    margin: 10px 0;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Модалка выбора ставки */
+.bet-modal-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--ton-blue);
+    box-shadow: 0 0 15px var(--ton-glow);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bet-modal-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.selected-direction-label {
+    color: var(--ton-cyan);
+}
+
+.bet-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.bet-preset-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.bet-preset-btn.active {
+    background: var(--ton-gradient);
+    color: #ffffff;
+    border: none;
+}
+
+.bet-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-confirm-bet {
+    flex: 1;
+    background: var(--ton-gradient);
+    color: #ffffff;
+    font-weight: 900;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px var(--ton-glow);
+}
+
+.btn-cancel-bet {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: none;
+    padding: 0 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Кнопки управления PULSE (UP / DOWN) */
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.btn {
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+.btn-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    opacity: 0.8;
+    color: #ffffff;
+}
+
+.btn-direction {
+    font-size: 20px;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.btn-up {
+    background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+}
+
+.btn-down {
+    background: linear-gradient(135deg, #d50000 0%, #ff1744 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(255, 23, 68, 0.3);
+}
+
+/* ==========================================================================
+   BONUS & LEADERBOARD PAGES
+   ========================================================================== */
+
+.page-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+.page-content h2 {
+    color: var(--ton-cyan);
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.btn-bonus {
+    width: 100%;
+    background: var(--ton-gradient);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 900;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--ton-glow);
+}
+
+.leaderboard-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   BOTTOM NAVIGATION (Нижнее меню)
+   ========================================================================== */
+
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(6, 9, 14, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color);
+    padding: 8px 0 12px 0;
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    width: 33.3%;
+    transition: color 0.2s ease;
+    text-decoration: none;
+}
+
+.nav-icon {
+    width: 22px;
+    height: 22px;
+}
+
+.nav-text {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.nav-item.active {
+    color: var(--ton-cyan);
+}
+
+.nav-item.active .nav-icon {
+    filter: drop-shadow(0 0 6px var(--ton-glow));
+}
