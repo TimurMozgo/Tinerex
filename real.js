@@ -1,9 +1,11 @@
 /* ==========================================================================
-   T-PULSE REAL — ENGINE (REAL BINANCE WS + SMOOTH ORGANIC AREA STYLE)
+   T-PULSE REAL — POCKET OPTION ENGINE (WS + PRICE LINES + CYCLE ENGINE)
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Инициализация Telegram SDK
+    // ----------------------------------------------------------------------
+    // 1. Инициализация Telegram SDK & Пользователя
+    // ----------------------------------------------------------------------
     const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.expand();
@@ -11,24 +13,127 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tg.setBackgroundColor) tg.setBackgroundColor('#06090e');
     }
 
-    // 2. Лимиты и состояние
+    const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230098ea'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E";
+
+    const tgUser = tg?.initDataUnsafe?.user;
+    const currentUser = {
+        id: tgUser?.id ? String(tgUser.id) : 'me',
+        name: tgUser?.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : 'Трейдер',
+        avatar: tgUser?.photo_url || DEFAULT_AVATAR
+    };
+
+    // ----------------------------------------------------------------------
+    // 2. Лимиты, Константы и Переменные Состояния
+    // ----------------------------------------------------------------------
     const MIN_BET = 0.1;
     const MAX_BET = 1.0;
 
     let balance = 10.00;
     let selectedBet = 0.1;
     let selectedDirection = null; // 'UP' или 'DOWN'
-    let isRoundActive = false;
-    let roundTimerInterval = null;
-    
+
+    // Цикл: 20с приём ставок / 60с раунд
+    const BETTING_TIME = 20;
+    const ROUND_TIME = 60;
+
+    let gameState = 'BETTING'; 
+    let phaseTimer = BETTING_TIME;
+    let mainLoopInterval = null;
+
+    let roundEntryPrice = 0.00;
+    let myPendingBet = null;
+
+    // График и котировки
     let currentPrice = 0.00;
     let targetPrice = 0.00;
     let socket = null;
-
     let chart = null;
-    let areaSeries = null; // Областной график вместо candleSeries
+    let areaSeries = null;
+    let entryPriceLine = null;
 
-    // 3. Элементы DOM
+    let activePlayers = [];
+
+    // ----------------------------------------------------------------------
+    // 3. Имитация живого рынка (Боты)
+    // ----------------------------------------------------------------------
+    const BOT_NAMES = [
+        'Nikita_33','ETERNITX'
+    ];
+
+    const BOT_AVATARS = [
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e676'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff9100'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e040fb'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E"
+    ];
+
+    let botSpawnerInterval = null;
+
+    function startBotSimulation() {
+        if (botSpawnerInterval) clearInterval(botSpawnerInterval);
+
+        spawnBotBet();
+        spawnBotBet();
+
+        botSpawnerInterval = setInterval(() => {
+            if (gameState === 'BETTING') {
+                if (Math.random() > 0.25) {
+                    spawnBotBet();
+                }
+            }
+        }, 1800);
+    }
+
+    function stopBotSimulation() {
+        if (botSpawnerInterval) {
+            clearInterval(botSpawnerInterval);
+            botSpawnerInterval = null;
+        }
+    }
+
+    function spawnBotBet() {
+        if (gameState !== 'BETTING') return;
+
+        // 1. Собираем имена ботов, которые УЖЕ поставили в этом раунде
+        const placedBotNames = activePlayers.filter(p => p.isBot).map(p => p.name);
+
+        // 2. Оставляем только свободных ботов
+        const availableNames = BOT_NAMES.filter(name => !placedBotNames.includes(name));
+
+        // 3. Если все боты из списка уже сделали по ставке — больше никто не заходит
+        if (availableNames.length === 0) return;
+
+        // Выбираем случайное имя ТОЛЬКО из свободных
+        const randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+        const randomAvatar = BOT_AVATARS[Math.floor(Math.random() * BOT_AVATARS.length)];
+        const amounts = [0.10, 0.20, 0.50, 1.00];
+        const randomBet = amounts[Math.floor(Math.random() * amounts.length)];
+        const randomDirection = Math.random() > 0.48 ? 'UP' : 'DOWN';
+
+        const botCard = {
+            id: 'bot_' + Math.random().toString(36).substring(2, 9),
+            name: randomName,
+            avatar: randomAvatar,
+            bet: randomBet,
+            multiplier: 1.80,
+            direction: randomDirection,
+            status: '',
+            resultText: randomBet.toFixed(2),
+            isBot: true
+        };
+
+        if (myPendingBet) {
+            activePlayers.splice(1, 0, botCard);
+        } else {
+            activePlayers.unshift(botCard);
+        }
+
+        renderPlayersList();
+    }
+
+    // ----------------------------------------------------------------------
+    // 4. Элементы DOM
+    // ----------------------------------------------------------------------
     const balanceEl = document.getElementById('balance');
     const statusEl = document.getElementById('statusMessage');
     
@@ -44,18 +149,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelBet = document.getElementById('btnCancelBet');
     
     const roundTimerEl = document.getElementById('roundTimer');
+    const playersFeedContainer = document.getElementById('playersFeedContainer');
 
     const navItems = document.querySelectorAll('.nav-item');
     const pages = document.querySelectorAll('.page');
 
     // ----------------------------------------------------------------------
-    // 4. Инициализация Неонового Графика (Сглаженный Area Style)
+    // 5. Отрисовка ленты игроков
+    // ----------------------------------------------------------------------
+    function renderPlayersList() {
+        if (!playersFeedContainer) return;
+        playersFeedContainer.innerHTML = '';
+
+        activePlayers.forEach(player => {
+            const card = document.createElement('div');
+            card.className = `player-card ${player.status || ''}`;
+            card.dataset.id = player.id;
+
+            const avatarSrc = player.avatar || DEFAULT_AVATAR;
+            const dirIcon = player.direction === 'UP' ? '🟢 UP' : '🔴 DOWN';
+
+            card.innerHTML = `
+                <div class="player-left">
+                    <img src="${avatarSrc}" alt="${player.name}" class="player-avatar">
+                    <div class="player-info">
+                        <span class="player-name">${player.name} ${player.id === currentUser.id ? '(Вы)' : ''}</span>
+                        <div class="player-bet-tag">
+                            <span class="dir-tag">${dirIcon}</span>
+                            <span class="icon">💎</span>
+                            <span class="bet-amount">${Number(player.bet).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-right">
+                    <span class="icon">💎</span>
+                    <span class="result-amount">${player.resultText !== undefined ? player.resultText : Number(player.bet).toFixed(2)}</span>
+                </div>
+            `;
+            playersFeedContainer.appendChild(card);
+        });
+    }
+
+    // ----------------------------------------------------------------------
+    // 6. Инициализация Графика
     // ----------------------------------------------------------------------
     async function initRealChart() {
         const chartContainer = document.getElementById('tvchart');
         if (!chartContainer || chart) return;
 
-        // Создаем график без жестких размеров
         chart = LightweightCharts.createChart(chartContainer, {
             layout: {
                 background: { color: 'transparent' },
@@ -75,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleScale: true,
         });
 
-        // ResizeObserver автоматически подгоняет холст под флексы
         const resizeObserver = new ResizeObserver(entries => {
             if (!entries || entries.length === 0) return;
             const { width, height } = entries[0].contentRect;
@@ -85,13 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         resizeObserver.observe(chartContainer);
 
-        // Настройки неонового градиентного графика
         const areaStyle = {
-            topColor: 'rgba(0, 152, 234, 0.35)',    // Голубой градиент сверху
-            bottomColor: 'rgba(0, 152, 234, 0.00)',  // Прозрачность снизу
-            lineColor: '#0098ea',                    // Яркая неоновая линия
+            topColor: 'rgba(0, 152, 234, 0.35)',
+            bottomColor: 'rgba(0, 152, 234, 0.00)',
+            lineColor: '#0098ea',
             lineWidth: 2,
-            crosshairMarkerVisible: true,            // Точка на текущей цене
+            crosshairMarkerVisible: true,
             crosshairMarkerRadius: 5,
             crosshairMarkerBorderColor: '#ffffff',
             crosshairMarkerBackgroundColor: '#0098ea',
@@ -102,40 +241,38 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         };
 
-        // Совместимость v4 / v5
         if (typeof chart.addSeries === 'function' && LightweightCharts.AreaSeries) {
             areaSeries = chart.addSeries(LightweightCharts.AreaSeries, areaStyle);
         } else {
             areaSeries = chart.addAreaSeries(areaStyle);
         }
 
-        setStatus('Загрузка истории рынка BTC/USDT...');
+        setStatus('Загрузка рынка BTC/USDT...');
 
-        // 1. Загружаем настоящую историю с Binance REST API
         try {
             const response = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100');
             if (response.ok) {
                 const data = await response.json();
                 const realPoints = data.map(c => ({
                     time: Math.floor(c[0] / 1000),
-                    value: parseFloat(c[4]) // Цена закрытия (Close)
+                    value: parseFloat(c[4])
                 }));
                 areaSeries.setData(realPoints);
                 currentPrice = realPoints[realPoints.length - 1].value;
                 targetPrice = currentPrice;
-                setStatus(`Рынок подключен. BTC: $${currentPrice.toFixed(2)}`);
             }
         } catch (e) {
-            console.warn('Binance REST недоступен, работаем на WebSocket');
+            console.warn('Binance REST error');
         }
 
-        // 2. Подключаем живые тики через WebSocket и плавную отрисовку
         connectBinanceWebSocket();
         startOrganicAnimation();
+        renderPlayersList();
+        startGameCycle();
     }
 
     // ----------------------------------------------------------------------
-    // 5. Поток Binance WebSocket + Плавное органическое сглаживание
+    // 7. Binance WS + Отрисовка
     // ----------------------------------------------------------------------
     function connectBinanceWebSocket() {
         socket = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
@@ -145,9 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!trade.p) return;
 
             targetPrice = parseFloat(trade.p);
-            if (currentPrice === 0) {
-                currentPrice = targetPrice;
-            }
+            if (currentPrice === 0) currentPrice = targetPrice;
         };
 
         socket.onerror = (err) => console.error('WS Error:', err);
@@ -155,17 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startOrganicAnimation() {
-        // Каждые 150мс добавляем легкий живой шум и плавно тянем цену к реальной цели с биржи
         setInterval(() => {
             if (!areaSeries || targetPrice === 0) return;
 
-            // Плавное приближение к целевой цене (интерполяция без резких телепортаций)
             currentPrice += (targetPrice - currentPrice) * 0.1;
-
-            // Естественные микро-колебания, чтобы линия не шла по линейке
             const organicNoise = (Math.random() - 0.48) * 1.5;
             const finalValue = parseFloat((currentPrice + organicNoise).toFixed(2));
-
             const now = Math.floor(Date.now() / 1000);
 
             areaSeries.update({
@@ -174,11 +304,151 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             currentPrice = finalValue;
+
+            if (gameState === 'ROUND' && entryPriceLine && myPendingBet) {
+                const isProfitable = (myPendingBet.direction === 'UP' && currentPrice > roundEntryPrice) ||
+                                     (myPendingBet.direction === 'DOWN' && currentPrice < roundEntryPrice);
+                
+                entryPriceLine.applyOptions({
+                    color: isProfitable ? '#00e676' : '#ff1744'
+                });
+            }
         }, 150);
     }
 
     // ----------------------------------------------------------------------
-    // 6. Пресеты и Валидация ставок
+    // 8. Движок PocketOption (Цикл Раундов + Подсчет Ботов)
+    // ----------------------------------------------------------------------
+    function startGameCycle() {
+        startBettingPhase();
+
+        if (mainLoopInterval) clearInterval(mainLoopInterval);
+
+        mainLoopInterval = setInterval(() => {
+            if (gameState === 'BETTING') {
+                phaseTimer--;
+                if (roundTimerEl) roundTimerEl.textContent = phaseTimer;
+                setStatus(`Прием ставок! До раунда: ${phaseTimer}s`);
+
+                if (phaseTimer <= 0) {
+                    startRoundPhase();
+                }
+            } else if (gameState === 'ROUND') {
+                phaseTimer--;
+                if (roundTimerEl) roundTimerEl.textContent = phaseTimer;
+                setStatus(`Раунд идет! Вход: $${roundEntryPrice.toFixed(2)} | До конца: ${phaseTimer}s`);
+
+                if (phaseTimer <= 0) {
+                    finishRoundPhase();
+                }
+            }
+        }, 1000);
+    }
+
+    function startBettingPhase() {
+        gameState = 'BETTING';
+        phaseTimer = BETTING_TIME;
+        myPendingBet = null;
+
+        activePlayers = [];
+        renderPlayersList();
+
+        startBotSimulation();
+
+        if (entryPriceLine && areaSeries) {
+            areaSeries.removePriceLine(entryPriceLine);
+            entryPriceLine = null;
+        }
+
+        if (btnUp) btnUp.disabled = false;
+        if (btnDown) btnDown.disabled = false;
+
+        if (roundTimerEl) {
+            roundTimerEl.style.display = 'flex';
+            roundTimerEl.style.color = '#00e676';
+            roundTimerEl.textContent = phaseTimer;
+        }
+
+        setStatus(`Прием ставок! До начала раунда: ${phaseTimer} сек`);
+    }
+
+    function startRoundPhase() {
+        gameState = 'ROUND';
+        phaseTimer = ROUND_TIME;
+        roundEntryPrice = currentPrice;
+
+        stopBotSimulation();
+
+        if (btnUp) btnUp.disabled = true;
+        if (btnDown) btnDown.disabled = true;
+        closeBetModal();
+
+        if (roundTimerEl) {
+            roundTimerEl.style.color = '#ff1744';
+            roundTimerEl.textContent = phaseTimer;
+        }
+
+        if (areaSeries && roundEntryPrice > 0 && myPendingBet) {
+            if (entryPriceLine) areaSeries.removePriceLine(entryPriceLine);
+
+            const lineColor = myPendingBet.direction === 'UP' ? '#00e676' : '#ff1744';
+
+            entryPriceLine = areaSeries.createPriceLine({
+                price: roundEntryPrice,
+                color: lineColor,
+                lineWidth: 2,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                axisLabelVisible: true,
+                title: `ВХОД (${myPendingBet.direction}): $${roundEntryPrice.toFixed(2)}`,
+            });
+        }
+
+        setStatus(`Раунд начался! Игроков в раунде: ${activePlayers.length}`);
+        haptic('notification', 'warning');
+    }
+
+    function finishRoundPhase() {
+        if (gameState !== 'ROUND') return;
+        gameState = 'FINISHED'; 
+
+        const roundExitPrice = currentPrice;
+
+        activePlayers.forEach(p => {
+            const isWin = (p.direction === 'UP' && roundExitPrice > roundEntryPrice) ||
+                          (p.direction === 'DOWN' && roundExitPrice < roundEntryPrice);
+
+            if (isWin) {
+                const profit = p.bet * 1.8;
+                p.status = 'win';
+                p.resultText = profit.toFixed(2);
+
+                if (p.id === currentUser.id && myPendingBet) {
+                    balance += profit;
+                    updateBalanceUI();
+                    setStatus(`ПОБЕДА! Вход: $${roundEntryPrice.toFixed(2)} | Выход: $${roundExitPrice.toFixed(2)} (+${profit.toFixed(2)} Gram)`);
+                    haptic('notification', 'success');
+                }
+            } else {
+                p.status = 'lose';
+                p.resultText = '0.00';
+
+                if (p.id === currentUser.id && myPendingBet) {
+                    setStatus(`ПРОИГРЫШ! Вход: $${roundEntryPrice.toFixed(2)} | Выход: $${roundExitPrice.toFixed(2)} (-${myPendingBet.amount.toFixed(2)} Gram)`);
+                    haptic('notification', 'error');
+                }
+            }
+        });
+
+        myPendingBet = null;
+        renderPlayersList();
+
+        setTimeout(() => {
+            startBettingPhase();
+        }, 2000);
+    }
+
+    // ----------------------------------------------------------------------
+    // 9. Модалка ставок
     // ----------------------------------------------------------------------
     const presets = [0.1, 0.25, 0.5, 1.0];
 
@@ -206,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function validateBetInput() {
-        const val = parseFloat(customBetInput.value);
+        const val = parseFloat(customBetInput?.value || 0);
         
         if (isNaN(val) || val < MIN_BET || val > MAX_BET) {
             customBetBox?.classList.add('has-error');
@@ -230,7 +500,17 @@ document.addEventListener('DOMContentLoaded', () => {
     customBetInput?.addEventListener('input', validateBetInput);
 
     function openBetModal(direction) {
-        if (isRoundActive) return;
+        if (gameState !== 'BETTING') {
+            setStatus('Ставки закрыты! Дождитесь следующего раунда.');
+            haptic('notification', 'error');
+            return;
+        }
+
+        if (myPendingBet) {
+            setStatus('Вы уже сделали ставку на этот раунд!');
+            haptic('notification', 'warning');
+            return;
+        }
 
         selectedDirection = direction;
         if (selectedDirectionLabel) {
@@ -252,10 +532,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btnDown?.addEventListener('click', () => openBetModal('DOWN'));
     btnCancelBet?.addEventListener('click', closeBetModal);
 
-    // ----------------------------------------------------------------------
-    // 7. Логика Игрового Раунда
-    // ----------------------------------------------------------------------
     btnConfirmBet?.addEventListener('click', () => {
+        if (gameState !== 'BETTING') {
+            setStatus('Время приёма ставок истекло!');
+            closeBetModal();
+            return;
+        }
+
         if (!validateBetInput()) {
             haptic('notification', 'error');
             return;
@@ -269,68 +552,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         balance -= selectedBet;
         updateBalanceUI();
-        closeBetModal();
 
-        startRound();
+        myPendingBet = {
+            amount: selectedBet,
+            direction: selectedDirection
+        };
+
+        const userCard = {
+            id: currentUser.id,
+            name: currentUser.name,
+            avatar: currentUser.avatar,
+            bet: selectedBet,
+            multiplier: 1.80,
+            direction: selectedDirection,
+            status: '',
+            resultText: selectedBet.toFixed(2)
+        };
+
+        activePlayers = activePlayers.filter(p => p.id !== currentUser.id);
+        activePlayers.unshift(userCard);
+        renderPlayersList();
+
+        closeBetModal();
+        setStatus(`Ставка принята: ${selectedBet} Gram на ${selectedDirection}! Ждем старт раунда.`);
+        haptic('notification', 'success');
     });
 
-    function startRound() {
-        isRoundActive = true;
-        const entryPrice = currentPrice;
-        let timeLeft = 10;
-
-        if (btnUp) btnUp.disabled = true;
-        if (btnDown) btnDown.disabled = true;
-
-        if (roundTimerEl) {
-            roundTimerEl.textContent = timeLeft;
-            roundTimerEl.style.display = 'flex';
-        }
-
-        setStatus(`Сделка: ${selectedBet} Gram на ${selectedDirection} | Вход: $${entryPrice.toFixed(2)}`);
-        haptic('notification', 'success');
-
-        roundTimerInterval = setInterval(() => {
-            timeLeft--;
-            if (roundTimerEl) roundTimerEl.textContent = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(roundTimerInterval);
-                finishRound(entryPrice);
-            }
-        }, 1000);
-    }
-
-    function finishRound(entryPrice) {
-        isRoundActive = false;
-        const exitPrice = currentPrice;
-        if (roundTimerEl) roundTimerEl.style.display = 'none';
-
-        if (btnUp) btnUp.disabled = false;
-        if (btnDown) btnDown.disabled = false;
-
-        const isWin = (selectedDirection === 'UP' && exitPrice > entryPrice) ||
-                      (selectedDirection === 'DOWN' && exitPrice < entryPrice);
-
-        if (isWin) {
-            const profit = selectedBet * 1.8;
-            balance += profit;
-            updateBalanceUI();
-            setStatus(`ПОБЕДА! Вход: $${entryPrice.toFixed(2)} | Выход: $${exitPrice.toFixed(2)} (+${profit.toFixed(2)} Gram)`);
-            haptic('notification', 'success');
-        } else {
-            setStatus(`Проигрыш! Вход: $${entryPrice.toFixed(2)} | Выход: $${exitPrice.toFixed(2)} (-${selectedBet.toFixed(2)} Gram)`);
-            haptic('notification', 'warning');
-        }
-    }
-
     // ----------------------------------------------------------------------
-    // 8. Переключение вкладок и хелперы
+    // 10. Навигация
     // ----------------------------------------------------------------------
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const tabName = item.dataset.tab;
-            if (tabName === 'tab-start') return; // Внешняя ссылка на welcome.html
+            if (tabName === 'tab-start') return;
 
             e.preventDefault();
             navItems.forEach(n => n.classList.remove('active'));
@@ -343,10 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetPage = document.getElementById('walletPage');
             }
 
-            if (targetPage) {
-                targetPage.classList.add('active');
-            }
-
+            if (targetPage) targetPage.classList.add('active');
             haptic('selection');
         });
     });
@@ -366,7 +617,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'notification') tg.HapticFeedback.notificationOccurred(style);
     }
 
-    // Запуск приложения
+    // Запуск инициализации
     initRealChart();
 });
-

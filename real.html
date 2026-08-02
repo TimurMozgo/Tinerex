@@ -50,7 +50,6 @@
         <section class="page active" id="tradePage">
 
             <div class="chart-wrapper">
-
                 <div id="tvchart"></div>
 
                 <!-- Эффекты поверх графика -->
@@ -61,7 +60,6 @@
 
                 <!-- Частицы / вспышки -->
                 <div class="fx-layer" id="fxLayer"></div>
-
             </div>
 
             <div class="status-panel" id="statusMessage">
@@ -96,7 +94,6 @@
 
             <!-- Основные кнопки действий -->
             <div class="controls" id="tradingControls">
-
                 <button class="btn btn-down" id="btnDown">
                     <span class="btn-title">PULSE</span>
                     <span class="btn-direction">DOWN</span>
@@ -106,53 +103,14 @@
                     <span class="btn-title">PULSE</span>
                     <span class="btn-direction">UP</span>
                 </button>
-
             </div>
 
-        </section>
+            <!-- Чистый контейнер: JS сам будет создавать карточки игроков -->
+            <div id="playersFeedContainer" class="players-feed"></div>
 
-        <div id="playersFeedContainer" class="players-feed">
-            <!-- Сюда JS будет динамически рендерить карточки игроков -->
-        </div>
+        </section>
 
         <!-- ================= WALLET / DEPOSIT PAGE ================= -->
-
-        <section class="page" id="walletPage">
-
-            <div class="page-content">
-
-                <h2>Кошелек TON</h2>
-
-                <p>
-                    Пополняйте баланс и выводите реальный профит напрямую в кошелек TON / Telegram Wallet.
-                </p>
-
-                <div class="wallet-actions-box">
-                    <button class="btn btn-wallet" id="btnDeposit">
-                        💎 Пополнить
-                    </button>
-                    <button class="btn btn-wallet-outline" id="btnWithdraw">
-                        📤 Вывести
-                    </button>
-                </div>
-
-            </div>
-
-        </section>
-
-        <!-- ================= LEADERBOARD PAGE ================= -->
-
-        <section class="page" id="leaderboardPage">
-
-            <div class="page-content">
-
-                <h2>TOP Real Traders</h2>
-
-                <div class="leaderboard-list" id="leaderboardList"></div>
-
-            </div>
-
-        </section>
 
     </main>
 
@@ -161,7 +119,6 @@
     <!-- ========================================= -->
 
     <nav class="bottom-nav" id="appNav">
-
         <!-- Старт (Главная / Welcome) -->
         <a href="./welcome.html" class="nav-item" data-tab="tab-start">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,7 +152,6 @@
             </svg>
             <span class="nav-text">Топ</span>
         </a>
-
     </nav>
 
 </div>

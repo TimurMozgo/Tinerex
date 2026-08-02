@@ -46,11 +46,10 @@
     <main class="pages">
 
         <!-- ================= TRADE PAGE ================= -->
-
         <section class="page active" id="tradePage">
 
+            <!-- 1. График -->
             <div class="chart-wrapper">
-
                 <div id="tvchart"></div>
 
                 <!-- Эффекты поверх графика -->
@@ -61,14 +60,27 @@
 
                 <!-- Частицы / вспышки -->
                 <div class="fx-layer" id="fxLayer"></div>
-
             </div>
 
+            <!-- 2. Панель статуса -->
             <div class="status-panel" id="statusMessage">
                 Демо-график готов. Делай свой прогноз!
             </div>
 
-            <!-- Панель выбора суммы ставки -->
+            <!-- 3. Основные кнопки действий (ТЕПЕРЬ НА ВИДУ СРАЗУ ПОД ГРАФИКОМ) -->
+            <div class="controls" id="tradingControls">
+                <button class="btn btn-down" id="btnDown">
+                    <span class="btn-title">PULSE</span>
+                    <span class="btn-direction">DOWN</span>
+                </button>
+
+                <button class="btn btn-up" id="btnUp">
+                    <span class="btn-title">PULSE</span>
+                    <span class="btn-direction">UP</span>
+                </button>
+            </div>
+
+            <!-- Панель выбора суммы ставки (появляется при клике на UP/DOWN) -->
             <div class="bet-modal-panel" id="betModalPanel" style="display: none;">
                 <div class="bet-modal-header">
                     <span>Ставка (Tinerex):</span>
@@ -83,59 +95,21 @@
                 </div>
             </div>
 
-            <!-- Основные кнопки действий -->
-            <div class="controls" id="tradingControls">
-
-                <button class="btn btn-down" id="btnDown">
-                    <span class="btn-title">PULSE</span>
-                    <span class="btn-direction">DOWN</span>
-                </button>
-
-                <button class="btn btn-up" id="btnUp">
-                    <span class="btn-title">PULSE</span>
-                    <span class="btn-direction">UP</span>
-                </button>
-
-            </div>
-
-        </section>
-
-        <!-- ================= BONUS PAGE ================= -->
-
-        <section class="page" id="bonusPage">
-
-            <div class="page-content">
-
-                <h2>Daily Bonus</h2>
-
-                <p>
-                    Заходи каждый день и получай бесплатные виртуальные TNRX.
-                </p>
-
-                <button class="btn btn-bonus" id="claimBonus">
-                    Забрать 500 TNRX
-                </button>
-
-            </div>
-
-        </section>
-
-        <!-- ================= LEADERBOARD PAGE ================= -->
-
-        <section class="page" id="leaderboardPage">
-
-            <div class="page-content">
-
-                <h2>TOP Demo Traders</h2>
-
-                <div class="leaderboard-list" id="leaderboardList"></div>
-
+            <!-- 4. Лента игроков (ТЕПЕРЬ НИЖЕ КНОПОК И УХОДИТ В СКРОЛЛ) -->
+            <div class="players-section">
+                <div class="players-header">
+                    <span>Сделки раунда</span>
+                    <span class="live-indicator">LIVE</span>
+                </div>
+                <div class="players-feed" id="playersFeedContainer">
+                    <!-- Сюда demo.js автоматически отрисовывает ботов и игрока -->
+                </div>
             </div>
 
         </section>
 
     </main>
-
+    
     <!-- ========================================= -->
     <!-- Bottom Navigation -->
     <!-- ========================================= -->
