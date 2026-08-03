@@ -9,6 +9,8 @@
     <!-- Telegram SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
+
     <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
@@ -30,11 +32,11 @@
             <div class="market-name">BTC / USDT</div>
         </div>
 
-        <div class="balance-box">
-            <div class="balance-label">БАЛАНС TON / GRAM</div>
+        <div class="balance-box" id="balanceBtn">
+            <div class="balance-label">ПОДКЛЮЧИТЬ</div>
             <div class="balance-row">
-                <span class="balance-value" id="balance">10.00</span>
-                <span class="balance-currency">Gram</span>
+                <span class="balance-value" id="realBalance">0.00</span>
+                <span class="balance-currency">TON</span>
             </div>
         </div>
     </header>
@@ -120,7 +122,7 @@
 
     <nav class="bottom-nav" id="appNav">
         <!-- Старт (Главная / Welcome) -->
-        <a href="./welcome.html" class="nav-item" data-tab="tab-start">
+        <a href="./index.html" class="nav-item" data-tab="tab-start">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <circle cx="12" cy="12" r="6"></circle>

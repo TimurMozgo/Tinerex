@@ -56,9 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------
     // 3. Имитация живого рынка (Боты)
     // ----------------------------------------------------------------------
-    const BOT_NAMES = [
-        'Nikita_33','ETERNITX'
-    ];
+    const BOT_NAMES = ['Nikita_33', 'ETERNITX'];
 
     const BOT_AVATARS = [
         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z'/%3E%3C/svg%3E",
@@ -94,16 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function spawnBotBet() {
         if (gameState !== 'BETTING') return;
 
-        // 1. Собираем имена ботов, которые УЖЕ поставили в этом раунде
         const placedBotNames = activePlayers.filter(p => p.isBot).map(p => p.name);
-
-        // 2. Оставляем только свободных ботов
         const availableNames = BOT_NAMES.filter(name => !placedBotNames.includes(name));
 
-        // 3. Если все боты из списка уже сделали по ставке — больше никто не заходит
         if (availableNames.length === 0) return;
 
-        // Выбираем случайное имя ТОЛЬКО из свободных
         const randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
         const randomAvatar = BOT_AVATARS[Math.floor(Math.random() * BOT_AVATARS.length)];
         const amounts = [0.10, 0.20, 0.50, 1.00];
@@ -617,6 +610,85 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'notification') tg.HapticFeedback.notificationOccurred(style);
     }
 
-    // Запуск инициализации
+    // ----------------------------------------------------------------------
+    // 11. Инициализация TON Connect & Депозиты (Безопасно внутри DOMContentLoaded)
+    // ----------------------------------------------------------------------
+    
+    // 📍 Место 1: Твой публичный TON-кошелек (Касса проекта, куда идут деньги)
+    const MY_ADMIN_WALLET = "UQCxupmZDDujlyyzP8SBYz4hPJ5yePBzFrLKnGxLd125CXSt"; 
+    
+    let tonConnectUI = null;
+
+    if (window.TON_CONNECT_UI) {
+        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://your-domain.com/tonconnect-manifest.json' // Ссылка на твой манифест
+        });
+
+        const balanceBox = document.querySelector('.balance-box');
+
+        if (balanceBox) {
+            balanceBox.addEventListener('click', async () => {
+                if (!tonConnectUI.connected) {
+                    tonConnectUI.openModal();
+                }
+            });
+        }
+
+        tonConnectUI.onStatusChange(wallet => {
+            const balanceLabel = document.querySelector('.balance-label');
+            
+            if (wallet) {
+                const rawAddr = wallet.account.address;
+                const shortAddress = `${rawAddr.slice(0, 4)}...${rawAddr.slice(-4)}`;
+                if (balanceLabel) balanceLabel.textContent = shortAddress;
+                console.log('Кошелек подключен:', rawAddr);
+            } else {
+                if (balanceLabel) balanceLabel.textContent = 'ПОДКЛЮЧИТЬ TON';
+                const realBalEl = document.getElementById('realBalance');
+                if (realBalEl) realBalEl.textContent = '0.00';
+            }
+        });
+    }
+
+    // 🚀 Функция проведения депозита
+    async function depositTON(amountInTon) {
+        if (!tonConnectUI) {
+            setStatus('Ошибка: Скрипт TON Connect не загружен!');
+            return;
+        }
+
+        if (!tonConnectUI.connected) {
+            setStatus('Сначала подключи кошелек!');
+            tonConnectUI.openModal();
+            return;
+        }
+
+        // Формируем транзакцию на кассу
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 600, // 10 минут
+            messages: [
+                {
+                    address: MY_ADMIN_WALLET, // Адрес твоей кассы
+                    amount: Math.floor(amountInTon * 1000000000).toString(), // Перевод в nanoTON
+                }
+            ]
+        };
+
+        try {
+            setStatus('Подтвердите транзакцию в кошельке...');
+            const result = await tonConnectUI.sendTransaction(transaction);
+            
+            console.log('Успешная отправка:', result);
+            setStatus('Депозит отправлен в блокчейн! Ожидаем зачисления...');
+            if (typeof haptic === 'function') haptic('notification', 'success');
+
+        } catch (e) {
+            console.error('Ошибка депозита:', e);
+            setStatus('Депозит отменен или произошла ошибка.');
+            if (typeof haptic === 'function') haptic('notification', 'error');
+        }
+    }
+
+    // Запуск графиков и циклов
     initRealChart();
 });
